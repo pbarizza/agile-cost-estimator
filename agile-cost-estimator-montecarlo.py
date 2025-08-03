@@ -37,7 +37,7 @@ base_scope = st.sidebar.number_input(
 # Calculate estimated sprints and duration
 estimated_sprints = base_scope / 20
 estimated_months = estimated_sprints * 0.5
-st.sidebar.info(f"👉 Based on 20 SP per sprint: ~{estimated_sprints:.1f} sprints (~{estimated_months:.1f} months)")
+st.sidebar.info(f"Based on 20 SP per sprint: ~{estimated_sprints:.1f} sprints (~{estimated_months:.1f} months)")
 
 # Risk Drivers (0% = stable, 100% = chaotic)
 st.sidebar.subheader("Risk Levels (%)")
