@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agile Monte Carlo Simulator</title>
+  <!-- Chart.js + Histogram Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-histogram"></script>
+  <!-- Papa Parse for CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f7f9fc;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .panel {
+      background: #f5f9ff;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .metric {
+      text-align: center;
+      padding: 15px;
+      background: #eef5ff;
+      border-radius: 6px;
+      font-size: 1.1em;
+    }
+    .metric-value {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #2980b9;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1.1em;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin: 20px 0;
+    }
+    .info {
+      font-size: 0.9em;
+      color: #555;
+      margin: 5px 0;
+    }
+    .help {
+      font-size: 0.85em;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+    .download {
+      margin: 20px 0;
+      text-align: center;
+    }
+    input[type="range"], input[type="number"], select {
+      width: 100%;
+      padding: 5px;
+      margin: 5px 0;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Agile Monte Carlo Simulator</h1>
+  <p>Interactive browser-based simulation for agile project cost, risk, and profitability.</p>
+
+  <div class="grid">
+    <!-- INPUT PANEL -->
+    <div class="panel">
+      <h2>Project Configuration</h2>
+
+      <h3>Team & Daily Rates ($)</h3>
+      <label>Developer Rate <input id="rateDev" type="number" value="400" /></label>
+      <label>QA Tester Rate <input id="rateQa" type="number" value="350" /></label>
+      <label>PM Rate <input id="ratePm" type="number" value="500" /></label>
+
+      <label>Number of Developers
+        <input id="numDev" type="range" min="1" max="4" value="2" /> <span id="numDevVal">2</span>
+      </label>
+      <label>Number of QA Testers
+        <input id="numQa" type="range" min="1" max="4" value="2" /> <span id="numQaVal">2</span>
+      </label>
+      <label>Number of PMs
+        <input id="numPm" type="range" min="0" max="2" value="1" /> <span id="numPmVal">1</span>
+      </label>
+
+      <h3>Project Scope (Story Points)</h3>
+      <label>Expected Scope
+        <input id="baseScope" type="number" value="500" />
+      </label>
+      <div class="info" id="sprintEstimate"></div>
+
+      <h3>Risk Levels (%)</h3>
+      <label>Uncertain Scope
+        <input id="riskScope" type="range" min="0" max="100" value="30" /> <span id="riskScopeVal">30</span>%
+        <div class="help">Higher = more initial uncertainty in requirements</div>
+      </label>
+      <label>Variable Team Speed
+        <input id="riskVelocity" type="range" min="0" max="100" value="25" /> <span id="riskVelocityVal">25</span>%
+        <div class="help">Higher = more variation in sprint velocity</div>
+      </label>
+      <label>Hidden Bugs (Rework)
+        <input id="riskBugs" type="range" min="0" max="100" value="35" /> <span id="riskBugsVal">35</span>%
+        <div class="help">Higher = more defects and rework effort</div>
+      </label>
+      <label>Changing Priorities
+        <input id="riskChanges" type="range" min="0" max="100" value="20" /> <span id="riskChangesVal">20</span>%
+        <div class="help">Higher = more mid-project scope changes</div>
+      </label>
+
+      <h3>Infrastructure</h3>
+      <label><input id="useCloud" type="checkbox" checked /> Include Cloud IaaS/PaaS?</label>
+      <div id="cloudInputs">
+        <label>Cloud Min ($/mo) <input id="cloudMin" type="number" value="1000" /></label>
+        <label>Cloud Max ($/mo) <input id="cloudMax" type="number" value="5000" /></label>
+      </div>
+
+      <h3>Managed Service (Optional)</h3>
+      <label><input id="useManaged" type="checkbox" checked /> Include Annual Managed Service?</label>
+      <div id="managedInputs">
+        <label>Managed Service as % of One-Off Cost
+          <input id="managedPct" type="range" min="5" max="50" value="15" /> <span id="managedPctVal">15</span>%
+          <div class="help">Ongoing support, monitoring, minor updates</div>
+        </label>
+      </div>
+
+      <label>Number of Simulations
+        <select id="nSimulations">
+          <option value="1000">1,000</option>
+          <option value="5000" selected>5,000</option>
+          <option value="10000">10,000</option>
+        </select>
+      </label>
+
+      <button id="runButton">Run Monte Carlo Simulation</button>
+    </div>
+
+    <!-- OUTPUT PANEL -->
+    <div>
+      <div id="results" style="display:none">
+        <h2>Simulation Results</h2>
+        <div class="metrics">
+          <div class="metric">
+            <div>Median Scope</div>
+            <div class="metric-value" id="mScope">—</div>
+          </div>
+          <div class="metric">
+            <div>Median Duration</div>
+            <div class="metric-value" id="mDuration">—</div>
+          </div>
+          <div class="metric">
+            <div>Median TCO Total</div>
+            <div class="metric-value" id="mTCO">—</div>
+          </div>
+          <div class="metric">
+            <div>Profit Margin</div>
+            <div class="metric-value" id="mMargin">—</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="chartTCO"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartProfit"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartDuration"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartMargin"></canvas>
+        </div>
+
+        <h3>Risk & Confidence</h3>
+        <ul>
+          <li><strong>P80 TCO (Total):</strong> <span id="p80TCO">—</span></li>
+          <li><strong>Chance of Profit:</strong> <span id="profitChance">—</span></li>
+          <li><strong>P90 Duration:</strong> <span id="p90Duration">—</span></li>
+        </ul>
+
+        <div class="download">
+          <button id="downloadBtn">Download Results (CSV)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // DOM Elements
+  const rateDevEl = document.getElementById('rateDev');
+  const rateQaEl = document.getElementById('rateQa');
+  const ratePmEl = document.getElementById('ratePm');
+  const numDevEl = document.getElementById('numDev');
+  const numQaEl = document.getElementById('numQa');
+  const numPmEl = document.getElementById('numPm');
+  const baseScopeEl = document.getElementById('baseScope');
+  const riskScopeEl = document.getElementById('riskScope');
+  const riskVelocityEl = document.getElementById('riskVelocity');
+  const riskBugsEl = document.getElementById('riskBugs');
+  const riskChangesEl = document.getElementById('riskChanges');
+  const useCloudEl = document.getElementById('useCloud');
+  const cloudMinEl = document.getElementById('cloudMin');
+  const cloudMaxEl = document.getElementById('cloudMax');
+  const useManagedEl = document.getElementById('useManaged');
+  const managedPctEl = document.getElementById('managedPct');
+  const nSimulationsEl = document.getElementById('nSimulations');
+  const runButton = document.getElementById('runButton');
+  const resultsEl = document.getElementById('results');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  // Sync sliders with labels
+  function sync(id, valId) {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById(valId);
+    valEl.textContent = el.value;
+    el.oninput = () => valEl.textContent = el.value;
+  }
+  sync('numDev', 'numDevVal');
+  sync('numQa', 'numQaVal');
+  sync('numPm', 'numPmVal');
+  sync('riskScope', 'riskScopeVal');
+  sync('riskVelocity', 'riskVelocityVal');
+  sync('riskBugs', 'riskBugsVal');
+  sync('riskChanges', 'riskChangesVal');
+  sync('managedPct', 'managedPctVal');
+
+  // Toggle inputs
+  useCloudEl.onchange = () => cloudInputs.style.display = useCloudEl.checked ? 'block' : 'none';
+  useManagedEl.onchange = () => managedInputs.style.display = useManagedEl.checked ? 'block' : 'none';
+  useCloudEl.onchange();
+  useManagedEl.onchange();
+
+  // Estimate sprints
+  baseScopeEl.oninput = function() {
+    const scope = parseFloat(this.value) || 0;
+    const sprints = scope / 20;
+    const months = sprints * 0.5;
+    document.getElementById('sprintEstimate').innerHTML =
+      `👉 Based on 20 SP per sprint: ~${sprints.toFixed(1)} sprints (~${months.toFixed(1)} months)`;
+  };
+  baseScopeEl.oninput();
+
+  // Charts
+  let chartTCO, chartProfit, chartDuration, chartMargin;
+
+  function createCharts() {
+    const ctx1 = document.getElementById('chartTCO').getContext('2d');
+    const ctx2 = document.getElementById('chartProfit').getContext('2d');
+    const ctx3 = document.getElementById('chartDuration').getContext('2d');
+    const ctx4 = document.getElementById('chartMargin').getContext('2d');
+
+    chartTCO = new Chart(ctx1, {
+      type: 'histogram',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'TCO Total ($)' } },
+          y: { title: { display: true, text: 'Frequency' } }
+        },
+        plugins: { title: { display: true, text: 'Total Cost of Ownership' } }
+      }
+    });
+
+    chartProfit = new Chart(ctx2, {
+      type: 'histogram',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Profit ($)' } },
+          y: { title: { display: true, text: 'Frequency' } }
+        },
+        plugins: { title: { display: true, text: 'Profit Distribution' } }
+      }
+    });
+
+    chartDuration = new Chart(ctx3, {
+      type: 'histogram',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Duration (Months)' } },
+          y: { title: { display: true, text: 'Frequency' } }
+        },
+        plugins: { title: { display: true, text: 'Project Duration' } }
+      }
+    });
+
+    chartMargin = new Chart(ctx4, {
+      type: 'histogram',
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Profit Margin (%)' } },
+          y: { title: { display: true, text: 'Frequency' } }
+        },
+        plugins: { title: { display: true, text: 'Profit Margin' } }
+      }
+    });
+  }
+
+  // Box-Muller transform for normal distribution
+  function randomNormal() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // Quantile function
+  function quantile(arr, q) {
+    const sorted = arr.slice().sort((a,b) => a - b);
+    const index = (sorted.length - 1) * q;
+    const low = Math.floor(index);
+    const high = Math.ceil(index);
+    if (low === high) return sorted[low];
+    return sorted[low] + (index - low) * (sorted[high] - sorted[low]);
+  }
+
+  // Run Simulation
+  runButton.onclick = function() {
+    const n = parseInt(nSimulationsEl.value);
+    const results = [];
+    const baseScope = parseFloat(baseScopeEl.value);
+    const baseVelocity = 20;
+    const daysPerSprint = 10;
+
+    for (let i = 0; i < n; i++) {
+      const riskS = riskScopeEl.value / 100;
+      const riskV = riskVelocityEl.value / 100;
+      const riskB = riskBugsEl.value / 100;
+      const riskC = riskChangesEl.value / 100;
+
+      // Scope with uncertainty and change
+      const scopeVolatility = randomNormal() * riskS;
+      const scopeChange = Math.random() * Math.random() * riskC;
+      const finalScope = Math.max(100, baseScope * (1 + scopeVolatility + scopeChange));
+
+      // Velocity
+      const velStd = baseVelocity * riskV;
+      const velocity = Math.max(5, baseVelocity + randomNormal() * velStd);
+
+      // Duration
+      const sprints = finalScope / velocity;
+      const totalDays = sprints * daysPerSprint;
+      const durationMonths = totalDays / 20;
+
+      // Labor cost
+      const laborDev = numDevEl.value * rateDevEl.value * totalDays;
+      const laborQa = numQaEl.value * rateQaEl.value * totalDays;
+      const laborPm = numPmEl.value * ratePmEl.value * totalDays;
+      const laborCost = laborDev + laborQa + laborPm;
+
+      // Rework
+      const reworkFactor = Math.min(1.0, 0.1 + Math.random() * 0.2 + randomNormal() * riskB);
+      const reworkCost = Math.max(0, reworkFactor * laborCost);
+
+      // Cloud
+      const cloudMonthly = useCloudEl.checked
+        ? Math.random() * (cloudMaxEl.value - cloudMinEl.value) + parseFloat(cloudMinEl.value)
+        : 0;
+      const cloudCost = cloudMonthly * durationMonths;
+
+      // One-off TCO
+      const tcoOneOff = laborCost + reworkCost + cloudCost;
+
+      // Managed service
+      const managedPct = useManagedEl.checked ? managedPctEl.value / 100 : 0;
+      const managedAnnual = managedPct * tcoOneOff;
+      const tcoTotal = tcoOneOff + managedAnnual * (durationMonths / 12);
+
+      // Revenue & Profit (20% markup)
+      const revenue = tcoOneOff * 1.20;
+      const profit = revenue - tcoTotal;
+      const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
+
+      results.push({
+        Scope_SP: finalScope,
+        Velocity_SP: velocity,
+        Sprints: sprints,
+        Duration_Months: durationMonths,
+        Labor_Cost: laborCost,
+        Rework_Cost: reworkCost,
+        Cloud_Cost: cloudCost,
+        Managed_Service_Annual: managedAnnual,
+        TCO_OneOff: tcoOneOff,
+        TCO_Total: tcoTotal,
+        Revenue: revenue,
+        Profit: profit,
+        Profit_Margin_: profitMargin
+      });
+    }
+
+    // Show results
+    resultsEl.style.display = 'block';
+
+    // Metrics
+    const tcoArr = results.map(r => r.TCO_Total);
+    const profitArr = results.map(r => r.Profit);
+    const durArr = results.map(r => r.Duration_Months);
+    const marginArr = results.map(r => r.Profit_Margin_);
+
+    document.getElementById('mScope').textContent = Math.round(quantile(results.map(r => r.Scope_SP), 0.5)) + " SP";
+    document.getElementById('mDuration').textContent = quantile(durArr, 0.5).toFixed(1) + " mo";
+    document.getElementById('mTCO').textContent = "$" + Math.round(quantile(tcoArr, 0.5)).toLocaleString();
+    document.getElementById('mMargin').textContent = quantile(marginArr, 0.5).toFixed(1) + "%";
+
+    document.getElementById('p80TCO').textContent = "$" + Math.round(quantile(tcoArr, 0.8)).toLocaleString();
+    document.getElementById('profitChance').textContent = (profitArr.filter(p => p > 0).length / n * 100).toFixed(1) + "%";
+    document.getElementById('p90Duration').textContent = quantile(durArr, 0.9).toFixed(1) + " months";
+
+    // Charts
+    if (!window.chartTCO) createCharts();
+
+    chartTCO.data = {
+      datasets: [{
+        label: 'TCO',
+        data: tcoArr,
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    };
+    chartTCO.update();
+
+    chartProfit.data = {
+      datasets: [{
+        label: 'Profit',
+        data: profitArr,
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    };
+    chartProfit.update();
+
+    chartDuration.data = {
+      datasets: [{
+        label: 'Duration',
+        data: durArr,
+        backgroundColor: 'rgba(255, 206, 86, 0.6)',
+        borderColor: 'rgba(255, 206, 86, 1)',
+        borderWidth: 1
+      }]
+    };
+    chartDuration.update();
+
+    chartMargin.data = {
+      datasets: [{
+        label: 'Margin',
+        data: marginArr,
+        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+        borderColor: 'rgba(153, 102, 255, 1)',
+        borderWidth: 1
+      }]
+    };
+    chartMargin.update();
+
+    // CSV Download
+    downloadBtn.onclick = () => {
+      const csv = Papa.unparse(results.map(r => ({
+        Duration_Months: r.Duration_Months.toFixed(2),
+        TCO_OneOff: r.TCO_OneOff.toFixed(2),
+        Managed_Service_Annual: r.Managed_Service_Annual.toFixed(2),
+        TCO_Total: r.TCO_Total.toFixed(2),
+        Profit: r.Profit.toFixed(2),
+        Profit_Margin: r.Profit_Margin_.toFixed(2),
+        Scope_SP: r.Scope_SP.toFixed(2),
+        Sprints: r.Sprints.toFixed(2)
+      })));
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'agile_monte_carlo_results.csv';
+      a.click();
+    };
+  };
+
+  // Initialize charts on load
+  window.onload = function() {
+    createCharts();
+  };
+</script>
+
+</body>
+</html>
