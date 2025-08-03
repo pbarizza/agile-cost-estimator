@@ -217,7 +217,7 @@ markdown
 ## 🚀 How to Use
 
 ### Option 1: Open in Browser (Recommended)
-1. Download [`monte-carlo.html`](monte-carlo.html)
+1. Download [`agile-cost-estimator-montecarlo.html](agile-cost-estimator-montecarlo.html)
 2. Double-click to open in any browser (Chrome, Firefox, Edge, etc.)
 3. Adjust inputs in the sidebar
 4. Click **"Run Monte Carlo Simulation"**
@@ -233,7 +233,7 @@ markdown
 
 ---
 
-## 🛠️ Inputs Explained
+##  Inputs Explained
 
 | Parameter | Description |
 |---------|-------------|
@@ -249,7 +249,7 @@ markdown
 
 ---
 
-## 📈 Outputs
+##  Outputs
 
 | Metric | Description |
 |-------|-------------|
@@ -279,8 +279,15 @@ Useful for reporting, audits, or further analysis in Excel.
 ## 📂 Project Structure
 
 agile-monte-carlo-simulator/
+
 ├── agile-cost-estimator-montecarlo.py 
+
 ├── agile-cost-estimator-montecarlo.html
+
 ├── README.md #
+
 ├── screenshot.png 
+
 └── LICENSE 
+
+
