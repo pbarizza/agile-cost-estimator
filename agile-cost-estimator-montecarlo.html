@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Agile Monte Carlo Simulator</title>
-  <!-- Chart.js + Histogram Plugin -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-histogram"></script>
-  <!-- Papa Parse for CSV -->
+  <!-- Papa Parse for CSV Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <style>
     body {
@@ -100,13 +99,18 @@
       display: block;
       margin: 10px 0 5px;
     }
+    h2, h3 {
+      color: #2c3e50;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
   <h1>Agile Monte Carlo Simulator</h1>
-  <p>Interactive browser-based simulation for agile project cost, risk, and profitability.</p>
+  <p>Interactive browser-based simulation for agile project cost, risk, and profitability. No installation — runs in any browser.</p>
 
   <div class="grid">
     <!-- INPUT PANEL -->
@@ -295,59 +299,59 @@
     const ctx4 = document.getElementById('chartMargin').getContext('2d');
 
     chartTCO = new Chart(ctx1, {
-      type: 'histogram',
-      data: { datasets: [] },
+      type: 'bar',
+      data: { labels: [], datasets: [] },
       options: {
         responsive: true,
         scales: {
-          x: { title: { display: true, text: 'TCO Total ($)' } },
-          y: { title: { display: true, text: 'Frequency' } }
+          y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+          x: { title: { display: true, text: 'TCO ($)' } }
         },
         plugins: { title: { display: true, text: 'Total Cost of Ownership' } }
       }
     });
 
     chartProfit = new Chart(ctx2, {
-      type: 'histogram',
-      data: { datasets: [] },
+      type: 'bar',
+      data: { labels: [], datasets: [] },
       options: {
         responsive: true,
         scales: {
-          x: { title: { display: true, text: 'Profit ($)' } },
-          y: { title: { display: true, text: 'Frequency' } }
+          y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+          x: { title: { display: true, text: 'Profit ($)' } }
         },
         plugins: { title: { display: true, text: 'Profit Distribution' } }
       }
     });
 
     chartDuration = new Chart(ctx3, {
-      type: 'histogram',
-      data: { datasets: [] },
+      type: 'bar',
+      data: { labels: [], datasets: [] },
       options: {
         responsive: true,
         scales: {
-          x: { title: { display: true, text: 'Duration (Months)' } },
-          y: { title: { display: true, text: 'Frequency' } }
+          y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+          x: { title: { display: true, text: 'Duration (Months)' } }
         },
         plugins: { title: { display: true, text: 'Project Duration' } }
       }
     });
 
     chartMargin = new Chart(ctx4, {
-      type: 'histogram',
-      data: { datasets: [] },
+      type: 'bar',
+      data: { labels: [], datasets: [] },
       options: {
         responsive: true,
         scales: {
-          x: { title: { display: true, text: 'Profit Margin (%)' } },
-          y: { title: { display: true, text: 'Frequency' } }
+          y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+          x: { title: { display: true, text: 'Profit Margin (%)' } }
         },
         plugins: { title: { display: true, text: 'Profit Margin' } }
       }
     });
   }
 
-  // Box-Muller transform for normal distribution
+  // Box-Muller for normal distribution
   function randomNormal() {
     let u = 0, v = 0;
     while (u === 0) u = Math.random();
@@ -363,6 +367,30 @@
     const high = Math.ceil(index);
     if (low === high) return sorted[low];
     return sorted[low] + (index - low) * (sorted[high] - sorted[low]);
+  }
+
+  // Create histogram bins
+  function createBins(data, numBins = 20) {
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min;
+    if (range === 0) return { labels: [min.toFixed(1)], frequencies: [data.length] };
+
+    const step = range / numBins;
+    const bins = Array(numBins).fill(0);
+    const labels = [];
+
+    for (let i = 0; i < numBins; i++) {
+      labels.push((min + i * step).toFixed(1));
+    }
+
+    for (const value of data) {
+      let binIdx = Math.floor((value - min) / step);
+      if (binIdx >= numBins) binIdx = numBins - 1;
+      bins[binIdx]++;
+    }
+
+    return { labels, frequencies: bins };
   }
 
   // Run Simulation
@@ -417,7 +445,7 @@
       const managedAnnual = managedPct * tcoOneOff;
       const tcoTotal = tcoOneOff + managedAnnual * (durationMonths / 12);
 
-      // Revenue & Profit (20% markup)
+      // Revenue & Profit (20% markup on one-off)
       const revenue = tcoOneOff * 1.20;
       const profit = revenue - tcoTotal;
       const profitMargin = revenue > 0 ? (profit / revenue) * 100 : 0;
@@ -460,49 +488,29 @@
     // Charts
     if (!window.chartTCO) createCharts();
 
-    chartTCO.data = {
-      datasets: [{
-        label: 'TCO',
-        data: tcoArr,
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1
-      }]
-    };
-    chartTCO.update();
+    // Update charts with binned data
+    const tcoBins = createBins(tcoArr, 25);
+    const profitBins = createBins(profitArr, 25);
+    const durBins = createBins(durArr, 20);
+    const marginBins = createBins(marginArr, 20);
 
-    chartProfit.data = {
-      datasets: [{
-        label: 'Profit',
-        data: profitArr,
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-        borderColor: 'rgba(75, 192, 192, 1)',
+    function updateChart(chart, bins, label, color) {
+      chart.data.labels = bins.labels;
+      chart.data.datasets = [{
+        label: label,
+        data: bins.frequencies,
+        backgroundColor: color,
+        borderColor: color.replace('0.6', '1'),
         borderWidth: 1
-      }]
-    };
-    chartProfit.update();
+      }];
+      chart.options.scales.x.title.text = label;
+      chart.update();
+    }
 
-    chartDuration.data = {
-      datasets: [{
-        label: 'Duration',
-        data: durArr,
-        backgroundColor: 'rgba(255, 206, 86, 0.6)',
-        borderColor: 'rgba(255, 206, 86, 1)',
-        borderWidth: 1
-      }]
-    };
-    chartDuration.update();
-
-    chartMargin.data = {
-      datasets: [{
-        label: 'Margin',
-        data: marginArr,
-        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-        borderColor: 'rgba(153, 102, 255, 1)',
-        borderWidth: 1
-      }]
-    };
-    chartMargin.update();
+    updateChart(chartTCO, tcoBins, 'TCO ($)', 'rgba(54, 162, 235, 0.6)');
+    updateChart(chartProfit, profitBins, 'Profit ($)', 'rgba(75, 192, 192, 0.6)');
+    updateChart(chartDuration, durBins, 'Duration (mo)', 'rgba(255, 206, 86, 0.6)');
+    updateChart(chartMargin, marginBins, 'Margin (%)', 'rgba(153, 102, 255, 0.6)');
 
     // CSV Download
     downloadBtn.onclick = () => {
