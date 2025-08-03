@@ -9,7 +9,7 @@ Perfect for:
 - Client proposals
 - Internal planning
 
-**[Live Demo][(https://yourusername.github.io/agile-monte-carlo-simulator)](https://agile-cost-estimator-aothpbfzicmlts7ti6vgru.streamlit.app/)** (tbc)
+**[Live Demo](https://agile-cost-estimator-aothpbfzicmlts7ti6vgru.streamlit.app/)** 
 
 ---
 
