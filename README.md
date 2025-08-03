@@ -9,7 +9,7 @@ Perfect for:
 - Client proposals
 - Internal planning
 
-**[Live Demo](https://yourusername.github.io/agile-monte-carlo-simulator)** (tbc)
+**[Live Demo][(https://yourusername.github.io/agile-monte-carlo-simulator)](https://agile-cost-estimator-aothpbfzicmlts7ti6vgru.streamlit.app/)** (tbc)
 
 ---
 
@@ -80,7 +80,7 @@ This helps you **quote confidently**, **plan for risk**, and **optimize team str
 1. Push this repo to GitHub
 2. Go to **Settings > Pages**
 3. Set source to `main` branch, `/root`
-4. Visit `https://pbarizza.github.io/agile-cost-estimator`
+4. Visit `[https://pbarizza.github.io/agile-cost-estimator](https://github.com/pbarizza/agile-cost-estimator/tree/main)`
 
 ---
 
