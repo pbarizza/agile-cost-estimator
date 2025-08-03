@@ -21,7 +21,7 @@ Perfect for:
 
 ---
 
-## 🔧 Features
+##  Features
 
  **Runs entirely in the browser** – just open the `.html` file  
  **No dependencies** – works offline  
@@ -39,7 +39,8 @@ Perfect for:
 - Changing priorities
  **Managed service costs** (optional ongoing support as % of one-off cost)
  **Cloud infrastructure toggle** (IaaS/PaaS optional)
- **Export results to CSV**✅ **Clear sprint estimation**: "X SP ≈ Y sprints ≈ Z months"
+ **Export results to CSV**
+ **Clear sprint estimation**: "X SP ≈ Y sprints ≈ Z months"
 
 ---
 
@@ -132,7 +133,7 @@ Qwen3-235B-A22B-2507
 3:20 pm
 Absolutely! Below is a professional, comprehensive README.md file for your GitHub repository. It’s designed to clearly explain your Agile Monte Carlo Simulator — whether you're sharing it with colleagues, clients, or the open-source community.
 
-📄 README.md – Agile Monte Carlo Simulator
+ README.md – Agile Monte Carlo Simulator
 markdown
 
 
@@ -214,7 +215,7 @@ markdown
 
 ---
 
-## 🚀 How to Use
+##  How to Use
 
 ### Option 1: Open in Browser (Recommended)
 1. Download [`agile-cost-estimator-montecarlo.html](agile-cost-estimator-montecarlo.html)
@@ -223,7 +224,7 @@ markdown
 4. Click **"Run Monte Carlo Simulation"**
 5. View charts, metrics, and download results
 
-> 💡 No internet required after download!
+>  No internet required after download!
 
 ### Option 2: Host Online (e.g., GitHub Pages)
 1. Push this repo to GitHub
@@ -263,7 +264,7 @@ markdown
 
 ---
 
-## 📥 Export Results
+##  Export Results
 
 Click **"Download Results (CSV)"** to get a CSV file with:
 - Duration
@@ -276,7 +277,7 @@ Useful for reporting, audits, or further analysis in Excel.
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 agile-monte-carlo-simulator/
 
